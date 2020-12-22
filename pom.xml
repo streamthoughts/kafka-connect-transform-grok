@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.streamthoughts</groupId>
+    <artifactId>kafka-connect-transform-grok</artifactId>
+    <version>1.0.0</version>
+
+    <name>Kafka Connect Transform Grok</name>
+    <description></description>
+
+    <developers>
+        <developer>
+            <organization>streamthoughts</organization>
+            <organizationUrl>https://www.streamthoughts.io</organizationUrl>
+        </developer>
+    </developers>
+
+    <organization>
+        <name>streamthoughts</name>
+        <url>https://www.streamthoughts.io</url>
+    </organization>
+
+    <scm>
+        <url>https://github.com/streamthoughts/kafka-connect-transform-grok</url>
+        <connection>scm:git:git://github.com:streamthoughts/kafka-connect-transform-grok.git</connection>
+        <developerConnection>scm:git:git@github.com:streamthoughts/kafka-connect-transform-grok.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <org.jruby.joni.version>2.1.40</org.jruby.joni.version>
+        <confluent.maven.repo>http://packages.confluent.io/maven/</confluent.maven.repo>
+        <io.confluent.version>6.0.0</io.confluent.version>
+        <org.apache.kafka.version>2.7.0</org.apache.kafka.version>
+        <kafka.connect.maven.plugin.version>0.11.3</kafka.connect.maven.plugin.version>
+        <junit.version>4.13.1</junit.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>connect-api</artifactId>
+            <version>${org.apache.kafka.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.7.25</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jruby.joni</groupId>
+            <artifactId>joni</artifactId>
+            <version>${org.jruby.joni.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>confluent</id>
+            <name>Confluent</name>
+            <url>${confluent.maven.repo}</url>
+        </repository>
+    </repositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <release>11</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>io.confluent</groupId>
+                <version>${kafka.connect.maven.plugin.version}</version>
+                <artifactId>kafka-connect-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>kafka-connect</goal>
+                        </goals>
+                        <configuration>
+                            <name>kafka-connect-transform-grok</name>
+                            <title>Kafka Connect Grok Expression Transformation</title>
+                            <documentationUrl>https://github.com/streamthoughts/kafka-connect-transform-grok</documentationUrl>
+                            <sourceUrl>https://github.com/streamthoughts/kafka-connect-transform-grok</sourceUrl>
+                            <description></description>
+                            <supportProviderName>StreamThoughts</supportProviderName>
+                            <supportSummary>This connector is supported by the open source community and StreamThoughts as part of its open source offering.</supportSummary>
+                            <supportUrl>https://github.com/streamthoughts/kafka-connect-transform-grok/issues</supportUrl>
+
+                            <ownerUsername>streamthoughts</ownerUsername>
+                            <ownerType>organization</ownerType>
+                            <ownerName>StreamThoughts</ownerName>
+                            <ownerUrl>https://streamthoughts.io/</ownerUrl>
+
+                            <componentTypes>
+                                <componentType>transform</componentType>
+                            </componentTypes>
+
+                            <tags>
+                                <tag>regex</tag>
+                                <tag>grok</tag>
+                                <tag>parsing</tag>
+                                <tag>log</tag>
+                            </tags>
+                            <requirements/>
+                            <confluentControlCenterIntegration>true</confluentControlCenterIntegration>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+</project>

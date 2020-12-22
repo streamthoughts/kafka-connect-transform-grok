@@ -1,0 +1,114 @@
+= Kafka Connect Grok Transformation
+
+image:https://img.shields.io/badge/License-Apache%202.0-blue.svg[https://github.com/streamthoughts/kafka-connect-transform-grok/blob/master/LICENSE]
+image:https://img.shields.io/github/issues-raw/streamthoughts/kafka-connect-transform-grok[GitHub issues]
+image:https://img.shields.io/github/stars/streamthoughts/kafka-connect-transform-grok?style=social[GitHub Repo stars]
+
+== Description
+
+The Apache Kafka® SMT `io.streamthoughts.kafka.connect.transform.Grok` allows parsing unstructured data text into a data `Struct` from the entire key or value using
+a Grok expression.
+
+== Grok Basics
+
+The syntax for a grok pattern is `%{SYNTAX:SEMANTIC}` or `%{SYNTAX:SEMANTIC:TYPE}`
+
+The `SYNTAX` is the name of the pattern that should match the input text value.
+
+The `SEMANTIC` is the field name for the data field that will contain the piece of text being matched.
+
+The `TYPE` is the target type to which the data field must be converted.
+
+Supported types are: ::
+* `SHORT`
+* `INTEGER`
+* `LONG`
+* `FLOAT`
+* `DOUBLE`
+* `BOOLEAN`
+* `STRING`
+
+The Kafka Connect Grok Transformer ships with a lot of reusable grok patterns. See the complete list of https://github.com/streamthoughts/kafka-connect-transform-grok/tree/main/src/main/resources/patterns[patterns].
+
+== Debugging Gook Expression
+You can build and debug your patterns using the useful online tools: http://grokdebug.herokuapp.com/[Grok Debug] and http://grokconstructor.appspot.com/[Grok Constructor].
+
+== Regular Expressions
+Grok sits on top of regular expressions, so any regular expressions are valid in grok as well.
+
+The Grok SMT uses the regular expression https://github.com/jruby/joni[Joni] library which is the Java port of https://github.com/kkos/oniguruma[Oniguruma] regexp library used by the http://www.elasticsearch.org/overview/[Elastic stack] (i.e Logstash).
+
+== Custom Patterns
+
+Sometimes, the patterns provided by the Grok SMT will not be sufficient to match your data.
+Therefore, you have a few options to define custom patterns.
+
+Option #1::
+You can use the https://github.com/kkos/oniguruma[Oniguruma] syntax for _named capture_ which allows you to match a piece of text and capture it as a field:
+
+[source]
+----
+(?<field_name>the regex pattern)
+----
+
+For example, if you need to capture parts of an email we can you the following pattern :
+[source]
+----
+(?<EMAILADDRESS>(?<EMAILLOCALPART>^[A-Z0-9._%+-]+)(?<HOSTNAME>@[A-Z0-9.-]+\.[A-Z]{2,6})$)
+----
+
+Configuration::
+[source, properties]
+----
+transforms=Grok
+transforms.Grok.type=io.streamthoughts.kafka.connect.transform.Grok$Value
+transforms.Grok.match=(?<EMAILADDRESS>(?<EMAILLOCALPART>[A-Za-z0-9._%+-]+)@(?<HOSTNAME>[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}))
+----
+
+_Note: The pattern `EMAILADDRESS` is already provided by the Grok SMT._
+
+Option #2::
+
+You can create a custom patterns file that will loaded the first time the Grok SMT is used :
+
+For example, defining the pattern needed to parse NGINX access logs:::
+* Create a directory (e.g. `grok-patterns`) with a file in it called `nginx`.
+* Then, write the pattern you need in that file as: `<the pattern name><a space><the regexp for that pattern>`.
+
+[source, bash]
+----
+$ mkdir ./grok-patterns
+$ cat <<EOF > ./grok-patterns/nginx
+NGINX_ACCESS %{IPORHOST:remote_addr} - %{USERNAME:remote_user} \[%{HTTPDATE:time_local}\] \"%{DATA:request}\" %{INT:status} %{NUMBER:bytes_sent} \"%{DATA:http_referer}\" \"%{DATA:http_user_agent}\"
+EOF
+----
+
+Configuration::
+[source, properties]
+----
+transforms=Grok
+transforms.Grok.type=io.streamthoughts.kafka.connect.transform.Grok$Value
+transforms.Grok.match=%{NGINX_ACCESS}
+transforms.Grok.patternsDir=/tmp/grok-patterns
+----
+
+== Grok Configuration
+
+[%header,format=csv]
+|===
+Property,Description,Type,Importance, Default
+`match`,The Grok pattern to matches, `string`, High, -
+`patternDefinitions`, Custom pattern definitions, `list`, Low, -
+`patternsDir`, List of user-defined pattern directories, `list`, Low, -
+`namedCapturesOnly`, If true then only store named captures from grok, `boolean`, Low, `true`
+|===
+
+== Licence
+
+Copyright 2020-2021 StreamThoughts.
+
+Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements. See the NOTICE file distributed with this work for additional information regarding copyright ownership. The ASF licenses this file to you under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0[http://www.apache.org/licenses/LICENSE-2.0]
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
