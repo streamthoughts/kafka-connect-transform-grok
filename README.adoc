@@ -125,6 +125,19 @@ Property,Description,Type,Importance, Default
 `namedCapturesOnly`, If true then only store named captures from grok, `boolean`, Low, `true`
 |===
 
+== 💡 Contributions
+
+Any feedback, bug reports and PRs are greatly appreciated!
+
+* Source Code: https://github.com/streamthoughts/kafka-connect-transform-grok[https://github.com/streamthoughts/kafka-connect-transform-grok]
+* Issue Tracker: https://github.com/streamthoughts/kafka-connect-transform-grok/issues[https://github.com/streamthoughts/kafka-connect-transform-grok/issues]
+
+* Releases: https://github.com/streamthoughts/kafka-connect-transform-grok/releases[https://github.com/streamthoughts/kafka-connect-transform-grok/releases]
+
+== About
+
+Originally, most of the source code used by the Apache Kafka® SMT `io.streamthoughts.kafka.connect.transform.Grok` was developed within the https://github.com/streamthoughts/kafka-connect-file-pulse[Kafka Connect File Pulse] connector plugin.
+
 == Licence
 
 Copyright 2020-2021 StreamThoughts.
