@@ -9,6 +9,28 @@ image:https://img.shields.io/github/stars/streamthoughts/kafka-connect-transform
 The Apache Kafka® SMT `io.streamthoughts.kafka.connect.transform.Grok` allows parsing unstructured data text into a data `Struct` from the entire key or value using
 a Grok expression.
 
+== Installation
+
+Grok SMT can be installed using the https://docs.confluent.io/current/confluent-hub/client.html[Confluent Hub Client] with:
+
+1. Download the distribution ZIP file for the latest available version.
++
+[source, bash]
+----
+export VERSION=1.0.0
+export GITHUB_HUB_REPO=https://github.com/streamthoughts/kafka-connect-transform-grok
+$ curl -sSL $GITHUB_HUB_REPO/releases/download/v$VERSION/streamthoughts-kafka-connect-transform-grok-$VERSION.zip
+----
++
+2. Use the `confluent-hub` CLI for installing it.
++
+[source, bash]
+----
+$ confluent-hub install streamthoughts-kafka-connect-transform-grok-$VERSION.zip
+----
+
+Alternatively, you can extract the ZIP file into one of the directories that is listed on the `plugin.path` worker configuration property.
+
 == Grok Basics
 
 The syntax for a grok pattern is `%{SYNTAX:SEMANTIC}` or `%{SYNTAX:SEMANTIC:TYPE}`
