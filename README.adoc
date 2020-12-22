@@ -119,7 +119,7 @@ transforms.Grok.patternsDir=/tmp/grok-patterns
 [%header,format=csv]
 |===
 Property,Description,Type,Importance, Default
-`match`,The Grok pattern to matches, `string`, High, -
+`match`, The grok expression to match and extract named captures (i.e data fields) with., `string`, High, -
 `patternDefinitions`, Custom pattern definitions, `list`, Low, -
 `patternsDir`, List of user-defined pattern directories, `list`, Low, -
 `namedCapturesOnly`, If true then only store named captures from grok, `boolean`, Low, `true`
