@@ -18,11 +18,19 @@
  */
 package io.streamthoughts.kafka.connect.transform.pattern;
 
+import io.streamthoughts.kafka.connect.transform.data.Type;
+import org.apache.kafka.common.utils.Time;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.jcodings.specific.UTF8Encoding;
+import org.joni.Matcher;
+import org.joni.NameEntry;
 import org.joni.Option;
 import org.joni.Regex;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,7 +44,11 @@ public class GrokMatcher {
 
     private final String expression;
 
-    private Regex regex;
+    private final Regex regex;
+
+    private final List<GrokCaptureGroup> grokCaptureGroups;
+
+    private final Schema schema;
 
     /**
      * Creates a new {@link GrokMatcher} instance.
@@ -51,8 +63,34 @@ public class GrokMatcher {
         this.patterns = patterns;
         this.expression = expression;
         this.patternsByName = patterns
-                .stream()
-                .collect(Collectors.toMap(GrokPattern::syntax, p -> p,  (p1, p2) -> p1.semantic() != null ? p1 : p2));
+            .stream()
+            .collect(Collectors.toMap(GrokPattern::syntax, p -> p,  (p1, p2) -> p1.semantic() != null ? p1 : p2));
+        byte[] bytes = expression.getBytes(StandardCharsets.UTF_8);
+        regex = new Regex(bytes, 0, bytes.length, Option.NONE, UTF8Encoding.INSTANCE);
+
+        grokCaptureGroups = new ArrayList<>();
+        for (Iterator<NameEntry> entry = regex.namedBackrefIterator(); entry.hasNext();) {
+            NameEntry nameEntry = entry.next();
+            final String field = new String(
+                nameEntry.name,
+                nameEntry.nameP,
+                nameEntry.nameEnd - nameEntry.nameP,
+                StandardCharsets.UTF_8);
+            final GrokPattern pattern = getGrokPattern(field);
+            final Type type = pattern != null ? pattern.type() : Type.STRING;
+            grokCaptureGroups.add(new GrokCaptureGroup(field, nameEntry.getBackRefs(), type));
+        }
+
+        final SchemaBuilder builder = SchemaBuilder.struct();
+        for (GrokCaptureGroup group : grokCaptureGroups) {
+            final Schema fieldSchema = new SchemaBuilder(group.type().schemaType()).optional().defaultValue(null).build();
+            builder.field(group.name(), fieldSchema);
+        }
+        schema = builder.build();
+    }
+
+    public Schema schema() {
+        return schema;
     }
 
     public GrokPattern getGrokPattern(final int i) {
@@ -63,16 +101,43 @@ public class GrokMatcher {
         return patternsByName.get(name);
     }
 
+    /**
+     * Returns the compiled regex expression.
+     */
     public Regex regex() {
-        if (regex == null) {
-            byte[] bytes = expression.getBytes(StandardCharsets.UTF_8);
-            regex = new Regex(bytes, 0, bytes.length, Option.NONE, UTF8Encoding.INSTANCE);
-        }
         return regex;
     }
 
-    String expression() {
+    /**
+     * Returns the raw regex expression.
+     */
+    public String expression() {
         return expression;
+    }
+
+    /**
+     *
+     * @param bytes the text bytes to match.
+     * @return      a {@code Map} that contains all named captured.
+     */
+    public Map<String, Object> captures(final byte[] bytes) {
+
+        long now = Time.SYSTEM.milliseconds();
+        final var extractor = new GrokCaptureExtractor.MapGrokCaptureExtractor(grokCaptureGroups);
+
+        final Matcher matcher = regex.matcher(bytes);
+        int result = matcher.search(0, bytes.length, Option.DEFAULT);
+
+        if (result == Matcher.FAILED) {
+            return null;
+        }
+        if (result == Matcher.INTERRUPTED) {
+            long interruptedAfterMs = Time.SYSTEM.milliseconds() - now;
+            throw new RuntimeException("Grok pattern matching was interrupted before completion (" + interruptedAfterMs + " ms)");
+        }
+        extractor.extract(bytes, matcher.getEagerRegion());
+
+        return extractor.captured();
     }
 
     @Override

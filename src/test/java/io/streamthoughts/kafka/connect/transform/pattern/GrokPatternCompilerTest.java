@@ -33,7 +33,7 @@ public class GrokPatternCompilerTest {
     }
 
     @Test
-    public void shouldCompileMatcherGivenSingleGrokPattern() {
+    public void should_compile_matcher_Given_single_grok_pattern() {
         final GrokMatcher matcher = compiler.compile("%{ISO8601_TIMEZONE}");
         Assert.assertNotNull(matcher);
         Assert.assertEquals("ISO8601_TIMEZONE", matcher.getGrokPattern(0).syntax());
@@ -41,7 +41,7 @@ public class GrokPatternCompilerTest {
     }
 
     @Test
-    public void shouldCompileMatcherGivenMultipleGrokPatterns() {
+    public void should_compile_matcher_Given_multiple_grok_pattern() {
         final GrokMatcher matcher = compiler.compile("%{ISO8601_TIMEZONE} %{LOGLEVEL} %{GREEDYDATA}");
         Assert.assertNotNull(matcher);
         Assert.assertNotNull(matcher.getGrokPattern("ISO8601_TIMEZONE"));
@@ -51,7 +51,7 @@ public class GrokPatternCompilerTest {
     }
 
     @Test
-    public void shouldCompileMatcherGivenMultipleGrokPatternWithSemantic() {
+    public void should_compile_matcher_Given_multiple_grok_pattern_with_semantic() {
         final GrokMatcher matcher = compiler.compile("%{ISO8601_TIMEZONE:timezone}");
         Assert.assertNotNull(matcher);
         Assert.assertEquals("ISO8601_TIMEZONE", matcher.getGrokPattern(0).syntax());
@@ -60,7 +60,7 @@ public class GrokPatternCompilerTest {
     }
 
     @Test
-    public void shouldCompileMatcherGivenMultipleGrokPatternWithSemanticAndType() {
+    public void should_compile_matcher_given_multiple_grok_pattern_with_semantic_and_type() {
         final GrokMatcher matcher = compiler.compile("%{ISO8601_TIMEZONE:timezone:integer}");
         Assert.assertNotNull(matcher);
         Assert.assertEquals("ISO8601_TIMEZONE", matcher.getGrokPattern(0).syntax());
@@ -70,7 +70,7 @@ public class GrokPatternCompilerTest {
     }
 
     @Test
-    public void shouldCompileMatcherGivenCustomGrokPattern() {
+    public void should_compile_matcher_given_custom_grok_pattern() {
         final GrokMatcher matcher = compiler.compile("(?<email>^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$)");
         Assert.assertNotNull(matcher);
         Assert.assertEquals("(?<email>^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$)", matcher.expression());

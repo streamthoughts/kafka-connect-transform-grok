@@ -16,20 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.streamthoughts.kafka.connect.transform;
+package io.streamthoughts.kafka.connect.transform.pattern;
 
-import io.streamthoughts.kafka.connect.transform.pattern.GrokMatcher;
-import io.streamthoughts.kafka.connect.transform.pattern.GrokPatternCompiler;
-import io.streamthoughts.kafka.connect.transform.pattern.GrokPatternResolver;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
-public class GrokParserTest {
+public class GrokMatcherTest {
 
     private GrokPatternCompiler compiler;
 
@@ -41,11 +37,7 @@ public class GrokParserTest {
     @Test
     public void should_parse_given_simple_grok_pattern() {
         final GrokMatcher matcher = compiler.compile("%{EMAILADDRESS}");
-
-        final Map<String, Object> captured = new HashMap<>();
-        GrokParser.parse("test@kafka.org".getBytes(StandardCharsets.UTF_8), matcher, (field, values, type) -> {
-            captured.put(field, values.get(0));
-        });
+        final Map<String, Object> captured = matcher.captures("test@kafka.org".getBytes(StandardCharsets.UTF_8));
         Assert.assertEquals("kafka.org", captured.get("HOSTNAME"));
         Assert.assertEquals("test@kafka.org", captured.get("EMAILADDRESS"));
         Assert.assertEquals("test", captured.get("EMAILLOCALPART"));
@@ -54,14 +46,9 @@ public class GrokParserTest {
     @Test
     public void should_parse_given_custom_grok_pattern() {
         final GrokMatcher matcher = compiler.compile("(?<EMAILADDRESS>(?<EMAILLOCALPART>[a-zA-Z][a-zA-Z0-9_.+-=:]+)@(?<HOSTNAME>\\b(?:[0-9A-Za-z][0-9A-Za-z-]{0,62})(?:\\.(?:[0-9A-Za-z][0-9A-Za-z-]{0,62}))*(\\.?|\\b)))");
-
-        final Map<String, Object> captured = new HashMap<>();
-        GrokParser.parse("test@kafka.org".getBytes(StandardCharsets.UTF_8), matcher, (field, values, type) -> {
-            captured.put(field, values.get(0));
-        });
+        final Map<String, Object> captured = matcher.captures("test@kafka.org".getBytes(StandardCharsets.UTF_8));
         Assert.assertEquals("kafka.org", captured.get("HOSTNAME"));
         Assert.assertEquals("test@kafka.org", captured.get("EMAILADDRESS"));
         Assert.assertEquals("test", captured.get("EMAILLOCALPART"));
     }
-
 }

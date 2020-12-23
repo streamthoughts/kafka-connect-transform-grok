@@ -22,53 +22,86 @@ import io.streamthoughts.kafka.connect.transform.pattern.GrokException;
 import io.streamthoughts.kafka.connect.transform.pattern.GrokMatcher;
 import io.streamthoughts.kafka.connect.transform.pattern.GrokPatternCompiler;
 import io.streamthoughts.kafka.connect.transform.pattern.GrokPatternResolver;
-import io.streamthoughts.kafka.connect.transform.pattern.GrokSchemaBuilder;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.ConnectRecord;
+import org.apache.kafka.connect.data.Field;
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaAndValue;
+import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.transforms.Transformation;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class Grok<R extends ConnectRecord<R>> implements Transformation<R> {
 
-    private GrokConfig config;
     private GrokPatternCompiler compiler;
-    private List<GrokMatcher> patterns;
-    private Schema schema;
-
+    private List<GrokMatcher> matchPatterns;
 
     protected SchemaAndValue process(final Schema inputSchema, final Object inputValue) {
         if (inputSchema == null && inputValue == null) {
             return new SchemaAndValue(null, null);
         }
 
-        if (Schema.Type.STRING == inputSchema.type()) {
-            final byte[] bytes = ((String)inputValue).getBytes(StandardCharsets.UTF_8);
-            final Struct struct = new Struct(schema);
-
-            for (GrokMatcher matcher : patterns) {
-                final boolean matched = GrokParser.parse(bytes, matcher, (field, values, type) -> {
-                    final Schema.Type fieldType = schema.field(field).schema().type();
-                    if (fieldType == Schema.Type.ARRAY)
-                        struct.put(field, values);
-                    else
-                        struct.put(field, values.get(0));
-                });
-
-                if (matched) {
-                    return new SchemaAndValue(schema, struct);
-                }
-            }
-            throw new GrokException("Can not matches grok pattern on value : " + inputValue);
+        if (Schema.Type.STRING != inputSchema.type()) {
+            throw new UnsupportedOperationException(inputSchema.type() + " is not a supported type.");
         }
 
-        throw new UnsupportedOperationException(inputSchema.type() + " is not a supported type.");
+        final byte[] bytes = ((String)inputValue).getBytes(StandardCharsets.UTF_8);
+
+        List<SchemaAndNamedCaptured> allNamedCaptured = new ArrayList<>(matchPatterns.size());
+        for (GrokMatcher matcher : matchPatterns) {
+            final Map<String, Object> captured = matcher.captures(bytes);
+            if (captured != null) {
+                allNamedCaptured.add(new SchemaAndNamedCaptured(matcher.schema(), captured));
+                break;
+            }
+        }
+
+        if (allNamedCaptured.isEmpty()) {
+            throw new GrokException("Supplied Grok patterns does not match input data: " + inputSchema);
+        }
+
+        final Schema schema = mergeToSchema(allNamedCaptured);
+        return new SchemaAndValue(schema, mergeToStruct(allNamedCaptured, schema));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Struct mergeToStruct(final List<SchemaAndNamedCaptured> allNamedCaptured, final Schema schema) {
+        final Map<String, Object> fields = new HashMap<>();
+        for (SchemaAndNamedCaptured schemaAndNamedCaptured : allNamedCaptured) {
+            schemaAndNamedCaptured.namedCaptured().forEach((name, value) -> {
+                final Field field = schema.field(name);
+                if (field.schema().type() == Schema.Type.ARRAY)
+                    ((List<Object>)fields.computeIfAbsent(name, k -> new ArrayList<>())).add(value);
+                else
+                    fields.put(name, value);
+            });
+        }
+        final Struct struct = new Struct(schema);
+        fields.forEach(struct::put);
+        return struct;
+    }
+
+    private Schema mergeToSchema(final List<SchemaAndNamedCaptured> allNamedCaptured) {
+        if (allNamedCaptured.size() == 1) return allNamedCaptured.get(0).schema();
+
+        final Map<String, Schema> fields = new HashMap<>();
+        for (SchemaAndNamedCaptured namedCaptured : allNamedCaptured) {
+            final Schema schema = namedCaptured.schema();
+            schema.fields().forEach(f -> {
+                final Schema fieldSchema = fields.containsKey(f.name()) ? SchemaBuilder.array(f.schema()) : schema;
+                fields.put(f.name(), fieldSchema);
+            });
+        }
+        SchemaBuilder schema = SchemaBuilder.struct();
+        fields.forEach(schema::field);
+        return schema.build();
     }
 
     /**
@@ -92,15 +125,17 @@ public abstract class Grok<R extends ConnectRecord<R>> implements Transformation
      */
     @Override
     public void configure(final Map<String, ?> props) {
-        config = new GrokConfig(props);
+        GrokConfig config = new GrokConfig(props);
         compiler = new GrokPatternCompiler(
             new GrokPatternResolver(
                 config.patternDefinitions(),
                 config.patternsDir()),
                 config.namedCapturesOnly()
         );
-        patterns = Collections.singletonList(compiler.compile(config.pattern()));
-        schema = GrokSchemaBuilder.buildSchemaForGrok(patterns);
+        matchPatterns = config.patterns()
+            .stream()
+            .map(pattern -> compiler.compile(pattern))
+            .collect(Collectors.toList());
     }
 
     public static class Key<R extends ConnectRecord<R>> extends Grok<R> {
@@ -140,6 +175,25 @@ public abstract class Grok<R extends ConnectRecord<R>> implements Transformation
                 transformed.value(),
                 r.timestamp()
             );
+        }
+    }
+
+    private static class SchemaAndNamedCaptured {
+        private final Schema schema;
+        private final Map<String, Object> namedCaptured;
+
+        public SchemaAndNamedCaptured(final Schema schema,
+                                      final Map<String, Object> namedCaptured) {
+            this.schema = schema;
+            this.namedCaptured = namedCaptured;
+        }
+
+        public Schema schema() {
+            return schema;
+        }
+
+        public Map<String, Object> namedCaptured() {
+            return namedCaptured;
         }
     }
 }
