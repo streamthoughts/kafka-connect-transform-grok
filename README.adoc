@@ -17,7 +17,7 @@ Grok SMT can be installed using the https://docs.confluent.io/current/confluent-
 +
 [source, bash]
 ----
-export VERSION=1.0.0
+export VERSION=1.1.0
 export GITHUB_HUB_REPO=https://github.com/streamthoughts/kafka-connect-transform-grok
 $ curl -sSL $GITHUB_HUB_REPO/releases/download/v$VERSION/streamthoughts-kafka-connect-transform-grok-$VERSION.zip
 ----
@@ -119,10 +119,12 @@ transforms.Grok.patternsDir=/tmp/grok-patterns
 [%header,format=csv]
 |===
 Property,Description,Type,Importance, Default
-`match`, The grok expression to match and extract named captures (i.e data fields) with., `string`, High, -
+`breakOnFirstPattern`, If true break on the first successful matching. Otherwise, the transformation will try all configured grok patterns, `boolean`, `true`
+`pattern`, The grok expression to match and extract named captures (i.e data fields) with., `string`, High, -
+`patterns.<id>`, An ordered list of grok expression to match and extract named captures (i.e data fields) with., `string`, High, -
 `patternDefinitions`, Custom pattern definitions, `list`, Low, -
 `patternsDir`, List of user-defined pattern directories, `list`, Low, -
-`namedCapturesOnly`, If true then only store named captures from grok, `boolean`, Low, `true`
+`namedCapturesOnly`, If true then only store named captures from grok, `boolean`, Medium, `true`
 |===
 
 == 💡 Contributions
