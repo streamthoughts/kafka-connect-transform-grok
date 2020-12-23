@@ -47,6 +47,10 @@ public class GrokConfig extends AbstractConfig {
     private static final String GROK_NAMED_CAPTURES_ONLY_DOC        = "If true, only store named captures from grok (default=true).";
     private static final boolean GROK_NAMED_CAPTURES_ONLY_DEFAULT   = true;
 
+    public static final String GROK_PATTERN_BREAK_ON_FIRST_PATTERN  = "breakOnFirstPattern";
+    private static final String GROK_PATTERN_BREAK_ON_FIRST_DOC     = "If true, break on the first successful matching. Otherwise, the transformation will try all configured grok patterns";
+    private static final boolean GROK_PATTERN_BREAK_ON_FIRST_DEFAULT= true;
+
     /**
      * Creates a new {@link GrokConfig} instance.
      *
@@ -54,6 +58,10 @@ public class GrokConfig extends AbstractConfig {
      */
     public GrokConfig(final Map<String, ?> originals) {
         super(configDef(), originals);
+    }
+
+    public boolean breakOnFirstPattern() {
+        return getBoolean(GROK_PATTERN_BREAK_ON_FIRST_PATTERN);
     }
 
     public List<String> patterns() {
@@ -104,6 +112,9 @@ public class GrokConfig extends AbstractConfig {
                 ConfigDef.Importance.MEDIUM, GROK_PATTERNS_DIR_DOC)
 
         .define(GROK_PATTERN_DEFINITIONS_CONFIG, ConfigDef.Type.LIST, Collections.emptyList(),
-                ConfigDef.Importance.MEDIUM, GROK_PATTERN_DEFINITIONS_DOC);
+                ConfigDef.Importance.MEDIUM, GROK_PATTERN_DEFINITIONS_DOC)
+
+        .define(GROK_PATTERN_BREAK_ON_FIRST_PATTERN, ConfigDef.Type.BOOLEAN, GROK_PATTERN_BREAK_ON_FIRST_DEFAULT,
+                ConfigDef.Importance.MEDIUM, GROK_PATTERN_BREAK_ON_FIRST_DOC);
     }
 }

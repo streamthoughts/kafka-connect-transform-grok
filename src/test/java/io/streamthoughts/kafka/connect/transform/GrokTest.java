@@ -27,7 +27,7 @@ import org.junit.Test;
 
 import java.util.HashMap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 public class GrokTest<R extends ConnectRecord<R>>  {
 
@@ -38,18 +38,55 @@ public class GrokTest<R extends ConnectRecord<R>>  {
             put(GrokConfig.GROK_PATTERN_CONFIG, "%{EMAILADDRESS}");
             put(GrokConfig.GROK_NAMED_CAPTURES_ONLY_CONFIG, false);
         }});
-        final SourceRecord record = new SourceRecord(
-            null,
-            null,
-            "topic",
-            Schema.STRING_SCHEMA,
-            null,
-            Schema.STRING_SCHEMA,
-            "test@apache.kafka.org"
-        );
+        final SourceRecord record = newSourceRecord("test@apache.kafka.org");
         final SourceRecord result = grok.apply(record);
 
         assertNotNull(result);
+        assertResultSchemaAndValue(result);
+    }
+
+    @Test
+    public void should_extract_named_captured_given_config_with_multiple_patterns_and_break_false() {
+
+        final Grok.Value<SourceRecord> grok = new Grok.Value<>();
+        grok.configure(new HashMap<>(){{
+            put(GrokConfig.GROK_PATTERNS_PREFIX_CONFIG+"1", "%{NUMBER}");
+            put(GrokConfig.GROK_PATTERNS_PREFIX_CONFIG+"2", "%{EMAILADDRESS}");
+            put(GrokConfig.GROK_NAMED_CAPTURES_ONLY_CONFIG, false);
+            put(GrokConfig.GROK_PATTERN_BREAK_ON_FIRST_PATTERN, false);
+        }});
+
+        final SourceRecord record = newSourceRecord("1 test@apache.kafka.org");
+        final SourceRecord result = grok.apply(record);
+
+        assertNotNull(result);
+        assertResultSchemaAndValue(result);
+
+        final Schema valueSchema = result.valueSchema();
+        assertNotNull(valueSchema.field("NUMBER"));
+        final Struct value = (Struct) result.value();
+        Assert.assertEquals("1", value.get("NUMBER"));
+    }
+
+    @Test
+    public void should_extract_named_captured_given_config_with_multiple_patterns_and_break_true() {
+
+        final Grok.Value<SourceRecord> grok = new Grok.Value<>();
+        grok.configure(new HashMap<>(){{
+            put(GrokConfig.GROK_PATTERNS_PREFIX_CONFIG+"1", "%{NUMBER}");
+            put(GrokConfig.GROK_PATTERNS_PREFIX_CONFIG+"2", "%{EMAILADDRESS}");
+            put(GrokConfig.GROK_NAMED_CAPTURES_ONLY_CONFIG, false);
+            put(GrokConfig.GROK_PATTERN_BREAK_ON_FIRST_PATTERN, true);
+        }});
+
+        final SourceRecord record = newSourceRecord("test@apache.kafka.org");
+        final SourceRecord result = grok.apply(record);
+
+        assertNotNull(result);
+        assertResultSchemaAndValue(result);
+    }
+
+    private void assertResultSchemaAndValue(SourceRecord result) {
         final Schema valueSchema = result.valueSchema();
         assertNotNull(valueSchema.field("HOSTNAME"));
         assertNotNull(valueSchema.field("EMAILADDRESS"));
@@ -59,5 +96,17 @@ public class GrokTest<R extends ConnectRecord<R>>  {
         Assert.assertEquals("apache.kafka.org", value.get("HOSTNAME"));
         Assert.assertEquals("test", value.get("EMAILLOCALPART"));
         Assert.assertEquals("test@apache.kafka.org", value.get("EMAILADDRESS"));
+    }
+
+    private static SourceRecord newSourceRecord(final String value) {
+        return new SourceRecord(
+            null,
+            null,
+            "topic",
+            Schema.STRING_SCHEMA,
+            null,
+            Schema.STRING_SCHEMA,
+            value
+        );
     }
 }

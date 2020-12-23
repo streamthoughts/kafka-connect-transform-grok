@@ -42,6 +42,7 @@ public abstract class Grok<R extends ConnectRecord<R>> implements Transformation
 
     private GrokPatternCompiler compiler;
     private List<GrokMatcher> matchPatterns;
+    private GrokConfig config;
 
     protected SchemaAndValue process(final Schema inputSchema, final Object inputValue) {
         if (inputSchema == null && inputValue == null) {
@@ -59,7 +60,7 @@ public abstract class Grok<R extends ConnectRecord<R>> implements Transformation
             final Map<String, Object> captured = matcher.captures(bytes);
             if (captured != null) {
                 allNamedCaptured.add(new SchemaAndNamedCaptured(matcher.schema(), captured));
-                break;
+                if (config.breakOnFirstPattern()) break;
             }
         }
 
@@ -95,7 +96,7 @@ public abstract class Grok<R extends ConnectRecord<R>> implements Transformation
         for (SchemaAndNamedCaptured namedCaptured : allNamedCaptured) {
             final Schema schema = namedCaptured.schema();
             schema.fields().forEach(f -> {
-                final Schema fieldSchema = fields.containsKey(f.name()) ? SchemaBuilder.array(f.schema()) : schema;
+                final Schema fieldSchema = fields.containsKey(f.name()) ? SchemaBuilder.array(f.schema()) : f.schema();
                 fields.put(f.name(), fieldSchema);
             });
         }
@@ -125,7 +126,7 @@ public abstract class Grok<R extends ConnectRecord<R>> implements Transformation
      */
     @Override
     public void configure(final Map<String, ?> props) {
-        GrokConfig config = new GrokConfig(props);
+        config = new GrokConfig(props);
         compiler = new GrokPatternCompiler(
             new GrokPatternResolver(
                 config.patternDefinitions(),
