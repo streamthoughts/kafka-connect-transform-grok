@@ -84,7 +84,7 @@ Configuration::
 ----
 transforms=Grok
 transforms.Grok.type=io.streamthoughts.kafka.connect.transform.Grok$Value
-transforms.Grok.match=(?<EMAILADDRESS>(?<EMAILLOCALPART>[A-Za-z0-9._%+-]+)@(?<HOSTNAME>[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}))
+transforms.Grok.pattern=(?<EMAILADDRESS>(?<EMAILLOCALPART>[A-Za-z0-9._%+-]+)@(?<HOSTNAME>[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}))
 ----
 
 _Note: The pattern `EMAILADDRESS` is already provided by the Grok SMT._
@@ -110,7 +110,7 @@ Configuration::
 ----
 transforms=Grok
 transforms.Grok.type=io.streamthoughts.kafka.connect.transform.Grok$Value
-transforms.Grok.match=%{NGINX_ACCESS}
+transforms.Grok.pattern=%{NGINX_ACCESS}
 transforms.Grok.patternsDir=/tmp/grok-patterns
 ----
 
