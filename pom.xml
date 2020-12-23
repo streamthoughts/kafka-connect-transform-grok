@@ -6,7 +6,7 @@
 
     <groupId>io.streamthoughts</groupId>
     <artifactId>kafka-connect-transform-grok</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
 
     <name>Kafka Connect Transform Grok</name>
     <description>Grok Expression Single Message Transformation for Kafka Connect</description>
