@@ -52,7 +52,7 @@ Supported types are: ::
 
 The Kafka Connect Grok Transformer ships with a lot of reusable grok patterns. See the complete list of https://github.com/streamthoughts/kafka-connect-transform-grok/tree/main/src/main/resources/patterns[patterns].
 
-== Debugging Gook Expression
+== Debugging Grok Expression
 You can build and debug your patterns using the useful online tools: http://grokdebug.herokuapp.com/[Grok Debug] and http://grokconstructor.appspot.com/[Grok Constructor].
 
 == Regular Expressions
