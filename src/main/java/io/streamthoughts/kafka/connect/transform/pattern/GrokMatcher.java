@@ -62,9 +62,16 @@ public class GrokMatcher {
         Objects.requireNonNull(expression, "expression can't be null");
         this.patterns = patterns;
         this.expression = expression;
+        // Key by semantic (field name) when present, syntax (pattern name) otherwise,
+        // so that the lookup below — which uses the named capture group name from the
+        // compiled regex — correctly resolves the type hint for patterns of the form
+        // %{SYNTAX:semantic:TYPE}.
         this.patternsByName = patterns
             .stream()
-            .collect(Collectors.toMap(GrokPattern::syntax, p -> p,  (p1, p2) -> p1.semantic() != null ? p1 : p2));
+            .collect(Collectors.toMap(
+                p -> p.semantic() != null ? p.semantic() : p.syntax(),
+                p -> p,
+                (p1, p2) -> p1.semantic() != null ? p1 : p2));
         byte[] bytes = expression.getBytes(StandardCharsets.UTF_8);
         regex = new Regex(bytes, 0, bytes.length, Option.NONE, UTF8Encoding.INSTANCE);
 

@@ -44,6 +44,33 @@ public class GrokMatcherTest {
     }
 
     @Test
+    public void should_convert_captured_values_to_type_specified_in_pattern() {
+        final GrokMatcher matcher = compiler.compile(
+            "%{NUMBER:aShort:SHORT} %{NUMBER:anInteger:INTEGER} %{NUMBER:aLong:LONG} " +
+            "%{NUMBER:aFloat:FLOAT} %{NUMBER:aDouble:DOUBLE} %{WORD:aBoolean:BOOLEAN} %{WORD:aString:STRING}"
+        );
+        final Map<String, Object> captured = matcher.captures(
+            "42 42 42 3.14 3.14 true hello".getBytes(StandardCharsets.UTF_8)
+        );
+
+        Assert.assertTrue(captured.get("aShort")   instanceof Short);
+        Assert.assertTrue(captured.get("anInteger") instanceof Integer);
+        Assert.assertTrue(captured.get("aLong")     instanceof Long);
+        Assert.assertTrue(captured.get("aFloat")    instanceof Float);
+        Assert.assertTrue(captured.get("aDouble")   instanceof Double);
+        Assert.assertTrue(captured.get("aBoolean")  instanceof Boolean);
+        Assert.assertTrue(captured.get("aString")   instanceof String);
+
+        Assert.assertEquals((short) 42, captured.get("aShort"));
+        Assert.assertEquals(42,         captured.get("anInteger"));
+        Assert.assertEquals(42L,        captured.get("aLong"));
+        Assert.assertEquals(3.14f,      (Float)  captured.get("aFloat"),  0.001f);
+        Assert.assertEquals(3.14,       (Double) captured.get("aDouble"), 0.001);
+        Assert.assertEquals(true,       captured.get("aBoolean"));
+        Assert.assertEquals("hello",    captured.get("aString"));
+    }
+
+    @Test
     public void should_parse_given_custom_grok_pattern() {
         final GrokMatcher matcher = compiler.compile("(?<EMAILADDRESS>(?<EMAILLOCALPART>[a-zA-Z][a-zA-Z0-9_.+-=:]+)@(?<HOSTNAME>\\b(?:[0-9A-Za-z][0-9A-Za-z-]{0,62})(?:\\.(?:[0-9A-Za-z][0-9A-Za-z-]{0,62}))*(\\.?|\\b)))");
         final Map<String, Object> captured = matcher.captures("test@kafka.org".getBytes(StandardCharsets.UTF_8));
