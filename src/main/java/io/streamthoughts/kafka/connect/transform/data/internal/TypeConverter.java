@@ -216,6 +216,7 @@ public class TypeConverter implements Serializable {
         if (s.isEmpty()) {
             return false;
         }
+        boolean dotSeen = false;
         for (int i = 0; i < s.length(); i++) {
             if (i == 0 && s.charAt(i) == '-') {
                 if (s.length() == 1) {
@@ -223,6 +224,13 @@ public class TypeConverter implements Serializable {
                 } else {
                     continue;
                 }
+            }
+            if (s.charAt(i) == '.') {
+                if (dotSeen) {
+                    return false; // second dot → not a number
+                }
+                dotSeen = true;
+                continue;
             }
             if (Character.digit(s.charAt(i), 10) < 0) {
                 return false;
