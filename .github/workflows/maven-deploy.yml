@@ -1,0 +1,62 @@
+# This workflow publishes the artifacts to Maven Central (Sonatype Central Portal).
+# It is triggered manually or when a tag matching 'v*' is pushed.
+name: Deploy Maven Central
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRO: 'zulu'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: 'Checkout GitHub repository'
+        uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: 'Import GPG key'
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: 'Set up Java'
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRO }}
+          check-latest: true
+          cache: maven
+
+      - name: 'Grant execute permission to MVN Wrapper'
+        run: chmod +x ./mvnw
+
+      - name: 'Set up Maven settings'
+        run: |
+          cat > ./settings.xml << EOF
+          <settings>
+            <interactiveMode>false</interactiveMode>
+            <servers>
+              <server>
+                <id>sonatype-central</id>
+                <username>${OSSRH_USERNAME}</username>
+                <password>${OSSRH_PASSWORD}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
+
+      - name: 'Deploy Maven Central'
+        run: ./mvnw -s ./settings.xml -B -ntp deploy -DskipTests -Possrh
