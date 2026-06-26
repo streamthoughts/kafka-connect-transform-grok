@@ -89,8 +89,8 @@ public class GrokCaptureGroup {
         @Override
         public void extract(byte[] bytes, Region region) {
             for (int capture : backRefs) {
-                int offset = region.beg[capture];
-                int length = region.end[capture] - region.beg[capture];
+                int offset = region.getBeg(capture);
+                int length = region.getEnd(capture) - region.getBeg(capture);
                 if (offset >= 0) {
                     String value = new String(bytes, offset, length, StandardCharsets.UTF_8);
                     consumer.accept(value);
